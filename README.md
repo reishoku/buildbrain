@@ -94,7 +94,7 @@ Build Linux
 1. Confirm that `linux-brain/arch/arm/boot/zImage` exists.
 
 
-Bootstrap Debian 11 (bullseye)
+Bootstrap Debian 12 (bookworm)
 ------------------------------
 
 1. Run `make ldefconfig lbuild`.
