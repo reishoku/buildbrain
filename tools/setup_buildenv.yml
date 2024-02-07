@@ -17,6 +17,7 @@
           - bison
           - flex
           - libncurses5-dev
+          - gcc-arm-linux-gnueabi
           - gcc-arm-linux-gnueabihf
           - libssl-dev
           - lzop
