@@ -49,7 +49,7 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
       - name: Run Ansible Playbook to setup build environment
-        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
+        run: ansible-playbook --diff -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Install listconfig
         run: pip3 install listconfig
       - name: Configure for Linux
@@ -99,7 +99,7 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
       - name: Run Ansible Playbook to setup build environment
-        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
+        run: ansible-playbook --diff -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Configure for Linux
         run: make ldefconfig-x1
       - name: Build Linux
@@ -167,7 +167,7 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
       - name: Run Ansible Playbook to setup build environment
-        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
+        run: ansible-playbook --diff -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Build nkbin-maker
         run: make nkbin-maker
       - name: Configure for U-Boot
@@ -215,7 +215,7 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
       - name: Run Ansible Playbook to setup build environment
-        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
+        run: ansible-playbook --diff -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Configure for U-Boot
         run: make udefconfig-${{ matrix.model }}
       - name: Build U-Boot
@@ -258,7 +258,7 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
       - name: Run Ansible Playbook to setup build environment
-        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
+        run: ansible-playbook --diff -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Configure for Linux
         run: make ldefconfig
       - name: Build Linux
@@ -296,7 +296,7 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
       - name: Run Ansible Playbook to setup build environment
-        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
+        run: ansible-playbook --diff -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Build Boot4u
         run: make boot4ubuild
       - name: Configure for U-Boot
