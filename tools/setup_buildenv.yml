@@ -1,0 +1,77 @@
+---
+- name: Setup Brainux Build Environment
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    uuu_install_method: "''"
+
+  tasks:
+    - name: Install dependencies using APT
+      when:
+          - ansible_facts['os_family'] == 'Debian'
+      ansible.builtin.apt:
+        name:
+          - build-essential
+          - bison
+          - flex
+          - libncurses5-dev
+          - gcc-arm-linux-gnueabihf
+          - libssl-dev
+          - lzop
+          - qemu-user-static
+          - debootstrap
+          - kpartx
+          - libyaml-dev
+          - python3
+          - python3-pip
+          # - python3-pip-whl # not available in Ubuntu focal
+          - python3-wheel
+          - python3-setuptools
+          - python3-kconfiglib
+          - python3-pyelftools
+        update_cache: true
+        state: present
+
+    - name: Determine installation method of uuu
+      when:
+        - ansible_facts['os_family']  == 'Debian'
+        - ansible_facts['distribution'] == 'Ubuntu'
+        - ansible_facts['distribution_major_version'] | int >= 22
+      ansible.builtin.set_fact:
+        uuu_install_method: "apt"
+
+    - name: Install uuu using APT
+      when:
+        - uuu_install_method is defined
+        - uuu_install_method == "apt"
+      ansible.builtin.apt:
+        name:
+          - uuu
+        update_cache: true
+        state: present
+
+    - name: Install uuu using pre-compiled binary from GitHub Releases
+      when:
+        - uuu_install_method is defined
+        - uuu_install_method != "apt"
+      block:
+        - name: Determine latest uuu release URL
+          ansible.builtin.shell:
+            cmd: curl -sL "https://api.github.com/repos/nxp-imx/mfgtools/releases/latest" | jq -r '.assets[] | select(.name=="uuu") | .browser_download_url'
+          register: latest_stable_uuu_url
+          # ansible.builtin.set_fact:
+          #   latest_stable_uuu_url: "{{ lookup('ansible.builtin.url', 'https://api.github.com/repos/nxp-imx/mfgtools/releases/latest') | from_json | community.general.json_query('assets[?name==`uuu`].browser_download_url') }}"
+        - name: Print latest uuu release URL
+          ansible.builtin.debug:
+            msg: "{{ latest_stable_uuu_url.stdout_lines[0] }}"
+        - name: Fetch uuu from GitHub and place the binary into /usr/local/bin
+          ansible.builtin.get_url:
+            url: "{{ latest_stable_uuu_url.stdout_lines[0] }}"
+            dest: "/usr/local/bin/"
+            mode: umask
+          register: get_uuu
+          failed_when:
+            - get_uuu is failed
+

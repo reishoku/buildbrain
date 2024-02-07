@@ -6,50 +6,50 @@ on:
     tags: '*'
 
 jobs:
-  create_release:
-    name: Create release
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          submodules: false
-      - name: Generate release name
-        id: release_name
-        # https://github.community/t/how-to-get-just-the-tag-name/16241/4
-        run: echo ::set-output name=name::${GITHUB_REF/refs\/*s\//}
-      - name: Generate changes file
-        uses: sarnold/gitchangelog-action@master
-        with:
-          config_file: .gitchangelog.rc
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.release_name.outputs.name }}-tag
-          release_name: ${{ steps.release_name.outputs.name }}
-          body_path: CHANGES.md
-          draft: false
-          prerelease: true
+  # create_release:
+  #   name: Create release
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
+  #         submodules: false
+  #     - name: Generate release name
+  #       id: release_name
+  #       # https://github.community/t/how-to-get-just-the-tag-name/16241/4
+  #       run: echo ::set-output name=name::${GITHUB_REF/refs\/*s\//}
+  #     - name: Generate changes file
+  #       uses: sarnold/gitchangelog-action@master
+  #       with:
+  #         config_file: .gitchangelog.rc
+  #         github_token: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Create release
+  #       id: create_release
+  #       uses: actions/create-release@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         tag_name: ${{ steps.release_name.outputs.name }}-tag
+  #         release_name: ${{ steps.release_name.outputs.name }}
+  #         body_path: CHANGES.md
+  #         draft: false
+  #         prerelease: true
 
   build-linux:
-    runs-on: ubuntu-20.04
-    needs: [create_release]
+    runs-on: ubuntu-22.04
+    # needs: [create_release]
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
       - name: Workaround for apt update failure
         run: sudo rm -f /etc/apt/sources.list.d/github_git-lfs.*
-      - name: Install deps
-        run: sudo apt update && sudo apt install build-essential bison flex libncurses5-dev gcc-arm-linux-gnueabi qemu-user-static debootstrap python3-pip
-      - name: Upgrade pip and setuptools
-        run: pip3 install -U pip setuptools
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
+      - name: Run Ansible Playbook to setup build environment
+        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Install listconfig
         run: pip3 install listconfig
       - name: Configure for Linux
@@ -66,38 +66,40 @@ jobs:
       - name: Generate archive name
         id: archive_name
         run: echo ::set-output name=name::linux-${GITHUB_REF/refs\/*s\//}
-      - name: Upload release.zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: release.zip
-          asset_name: ${{ steps.archive_name.outputs.name }}.zip
-          asset_content_type: application/zip
+      # - name: Upload release.zip
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.create_release.outputs.upload_url }}
+      #     asset_path: release.zip
+      #     asset_name: ${{ steps.archive_name.outputs.name }}.zip
+      #     asset_content_type: application/zip
       - name: Generate listconfig
         run: listconfig ./linux-brain/Kconfig ./linux-brain/.config > listconfig
-      - name: Upload listconfig
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: listconfig
-          asset_name: listconfig
-          asset_content_type: text/plain
+      # - name: Upload listconfig
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.create_release.outputs.upload_url }}
+      #     asset_path: listconfig
+      #     asset_name: listconfig
+      #     asset_content_type: text/plain
 
   build-linux-x1:
-    runs-on: ubuntu-20.04
-    needs: [create_release]
+    runs-on: ubuntu-22.04
+    # needs: [create_release]
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
       - name: Workaround for apt update failure
         run: sudo rm -f /etc/apt/sources.list.d/github_git-lfs.*
-      - name: Install deps
-        run: sudo apt update && sudo apt install build-essential bison flex libncurses5-dev gcc-arm-linux-gnueabihf libssl-dev lzop qemu-user-static debootstrap
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
+      - name: Run Ansible Playbook to setup build environment
+        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Configure for Linux
         run: make ldefconfig-x1
       - name: Build Linux
@@ -112,19 +114,19 @@ jobs:
       - name: Generate archive name
         id: archive_name
         run: echo ::set-output name=name::linux-x1-${GITHUB_REF/refs\/*s\//}
-      - name: Upload release.zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: release.zip
-          asset_name: ${{ steps.archive_name.outputs.name }}.zip
-          asset_content_type: application/zip
+      # - name: Upload release.zip
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.create_release.outputs.upload_url }}
+      #     asset_path: release.zip
+      #     asset_name: ${{ steps.archive_name.outputs.name }}.zip
+      #     asset_content_type: application/zip
 
   build-uboot:
-    runs-on: ubuntu-20.04
-    needs: [create_release]
+    runs-on: ubuntu-22.04
+    # needs: [create_release]
     strategy:
       matrix:
         include:
@@ -162,8 +164,10 @@ jobs:
           submodules: true
       - name: Workaround for apt update failure
         run: sudo rm -f /etc/apt/sources.list.d/github_git-lfs.*
-      - name: Install deps
-        run: sudo apt update && sudo apt install build-essential bison flex libncurses5-dev gcc-arm-linux-gnueabi qemu-user-static debootstrap
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
+      - name: Run Ansible Playbook to setup build environment
+        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Build nkbin-maker
         run: make nkbin-maker
       - name: Configure for U-Boot
@@ -184,19 +188,19 @@ jobs:
       - name: Generate archive name
         id: archive_name
         run: echo ::set-output name=name::uboot-${{ matrix.model }}-${GITHUB_REF/refs\/*s\//}
-      - name: Upload release.zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: release.zip
-          asset_name: ${{ steps.archive_name.outputs.name }}.zip
-          asset_content_type: application/zip
+      # - name: Upload release.zip
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.create_release.outputs.upload_url }}
+      #     asset_path: release.zip
+      #     asset_name: ${{ steps.archive_name.outputs.name }}.zip
+      #     asset_content_type: application/zip
 
   build-uboot-x1:
-    runs-on: ubuntu-20.04
-    needs: [create_release]
+    runs-on: ubuntu-22.04
+    # needs: [create_release]
     strategy:
       matrix:
         include:
@@ -208,8 +212,10 @@ jobs:
           submodules: true
       - name: Workaround for apt update failure
         run: sudo rm -f /etc/apt/sources.list.d/github_git-lfs.*
-      - name: Install deps
-        run: sudo apt update && sudo apt install build-essential bison flex libncurses5-dev gcc-arm-linux-gnueabihf libssl-dev lzop qemu-user-static debootstrap
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
+      - name: Run Ansible Playbook to setup build environment
+        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Configure for U-Boot
         run: make udefconfig-${{ matrix.model }}
       - name: Build U-Boot
@@ -223,19 +229,19 @@ jobs:
       - name: Generate archive name
         id: archive_name
         run: echo ::set-output name=name::uboot-${{ matrix.model }}-${GITHUB_REF/refs\/*s\//}
-      - name: Upload release.zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: release.zip
-          asset_name: ${{ steps.archive_name.outputs.name }}.zip
-          asset_content_type: application/zip
+      # - name: Upload release.zip
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.create_release.outputs.upload_url }}
+      #     asset_path: release.zip
+      #     asset_name: ${{ steps.archive_name.outputs.name }}.zip
+      #     asset_content_type: application/zip
 
   build-sd:
-    runs-on: ubuntu-20.04
-    needs: [create_release]
+    runs-on: ubuntu-22.04
+    # needs: [create_release]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -249,8 +255,10 @@ jobs:
           cp -r cegcc /opt/
       - name: Workaround for apt update failure
         run: sudo rm -f /etc/apt/sources.list.d/github_git-lfs.*
-      - name: Install deps
-        run: sudo apt update && sudo apt install kpartx build-essential bison flex libncurses5-dev gcc-arm-linux-gnueabi qemu-user-static debootstrap
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
+      - name: Run Ansible Playbook to setup build environment
+        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Configure for Linux
         run: make ldefconfig
       - name: Build Linux
@@ -266,31 +274,29 @@ jobs:
         run: make image/sd.img && mv image/sd.img ${{ steps.image_name.outputs.name }}.img
       - name: Compress
         run: zip ${{ steps.image_name.outputs.name }}.zip ${{ steps.image_name.outputs.name }}.img
-      - name: Upload the image
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.image_name.outputs.name }}.zip
-          asset_name: ${{ steps.image_name.outputs.name }}.zip
-          asset_content_type: application/zip
+      # - name: Upload the image
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.create_release.outputs.upload_url }}
+      #     asset_path: ${{ steps.image_name.outputs.name }}.zip
+      #     asset_name: ${{ steps.image_name.outputs.name }}.zip
+      #     asset_content_type: application/zip
 
   build-sd-x1:
-    runs-on: ubuntu-20.04
-    needs: [create_release]
+    runs-on: ubuntu-22.04
+    # needs: [create_release]
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
       - name: Workaround for apt update failure
         run: sudo rm -f /etc/apt/sources.list.d/github_git-lfs.*
-      - name: Install deps
-        run: sudo apt update && sudo apt install kpartx build-essential bison flex libncurses5-dev gcc-arm-linux-gnueabihf libssl-dev lzop qemu-user-static debootstrap
-      - name: Upgrade pip and setuptools
-        run: pip3 install -U pip setuptools
-      - name: Install pyelftools
-        run: pip3 install pyelftools
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible python3-jmespath
+      - name: Run Ansible Playbook to setup build environment
+        run: ansible-playbook -c local -b -i localhost, ./tools/setup_buildenv.yml
       - name: Build Boot4u
         run: make boot4ubuild
       - name: Configure for U-Boot
@@ -310,12 +316,12 @@ jobs:
         run: make image/sd_x1.img && mv image/sd_x1.img ${{ steps.image_name.outputs.name }}.img
       - name: Compress
         run: zip ${{ steps.image_name.outputs.name }}.zip ${{ steps.image_name.outputs.name }}.img
-      - name: Upload the image
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.image_name.outputs.name }}.zip
-          asset_name: ${{ steps.image_name.outputs.name }}.zip
-          asset_content_type: application/zip
+      # - name: Upload the image
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.create_release.outputs.upload_url }}
+      #     asset_path: ${{ steps.image_name.outputs.name }}.zip
+      #     asset_name: ${{ steps.image_name.outputs.name }}.zip
+      #     asset_content_type: application/zip
