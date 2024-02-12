@@ -17,8 +17,9 @@
           - bison
           - flex
           - libncurses5-dev
-          - gcc-arm-linux-gnueabi
-          - gcc-arm-linux-gnueabihf
+          - gcc-10-arm-linux-gnueabi
+          - gcc-10-arm-linux-gnueabihf
+          - openssl
           - libssl-dev
           - lzop
           - qemu-user-static
@@ -27,13 +28,37 @@
           - libyaml-dev
           - python3
           - python3-pip
-          # - python3-pip-whl # not available in Ubuntu focal
           - python3-wheel
           - python3-setuptools
           - python3-kconfiglib
           - python3-pyelftools
         update_cache: true
-        state: present
+        install_recommends: false
+        state: latest
+
+    - name: Configure alternatives
+      community.general.alternatives:
+        name: "{{ item.name }}"
+        path: "{{ item.from }}"
+        link: "{{ item.to }}"
+        state: selected
+      loop:
+        - { name: "arm-linux-gnueabi", from: "/usr/bin/arm-linux-gnueabi-gcc-10", to: "/usr/bin/arm-linux-gnueabi-gcc" }
+        - { name: "arm-linux-gnueabihf", from: "/usr/bin/arm-linux-gnueabihf-gcc-10", to: "/usr/bin/arm-linux-gnueabihf-gcc" }
+
+    - name: GCC version to use
+      ansible.builtin.shell: |
+        /usr/bin/arm-linux-gnueabi-gcc --version
+        /usr/bin/arm-linux-gnueabihf-gcc --version
+        arm-linux-gnueabi-gcc --version
+        arm-linux-gnueabihf-gcc --version
+      changed_when: false
+      register: gccver
+
+    - name: Print GCC version to use
+      ansible.builtin.debug:
+        msg: "{{ gccver.stdout_lines }}"
+      changed_when: false
 
     - name: Determine installation method of uuu
       when:
