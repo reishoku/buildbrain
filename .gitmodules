@@ -3,8 +3,8 @@
 	url = https://github.com/brain-hackers/u-boot-brain.git
 [submodule "linux-brain"]
 	path = linux-brain
-	url = https://github.com/reishoku/linux-brain.git
 	branch = ci_reishoku_upstream-patch
+	url = https://github.com/reishoku/linux-brain.git
 [submodule "nkbin_maker"]
 	path = nkbin_maker
 	url = https://github.com/brain-hackers/nkbin_maker.git
