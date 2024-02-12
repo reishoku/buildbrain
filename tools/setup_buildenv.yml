@@ -17,8 +17,8 @@
           - bison
           - flex
           - libncurses5-dev
-          - gcc-10-arm-linux-gnueabi
-          - gcc-10-arm-linux-gnueabihf
+          - gcc-9-arm-linux-gnueabi
+          - gcc-9-arm-linux-gnueabihf
           - openssl
           - libssl-dev
           - lzop
@@ -43,8 +43,8 @@
         link: "{{ item.to }}"
         state: selected
       loop:
-        - { name: "arm-linux-gnueabi", from: "/usr/bin/arm-linux-gnueabi-gcc-10", to: "/usr/bin/arm-linux-gnueabi-gcc" }
-        - { name: "arm-linux-gnueabihf", from: "/usr/bin/arm-linux-gnueabihf-gcc-10", to: "/usr/bin/arm-linux-gnueabihf-gcc" }
+        - { name: "arm-linux-gnueabi", from: "/usr/bin/arm-linux-gnueabi-gcc-9", to: "/usr/bin/arm-linux-gnueabi-gcc" }
+        - { name: "arm-linux-gnueabihf", from: "/usr/bin/arm-linux-gnueabihf-gcc-9", to: "/usr/bin/arm-linux-gnueabihf-gcc" }
 
     - name: GCC version to use
       ansible.builtin.shell: |
